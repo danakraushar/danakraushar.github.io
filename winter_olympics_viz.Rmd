@@ -1,0 +1,464 @@
+---
+title: "Visualising Winter Olympic Medals Over Time"
+subtitle: "Assignment for Thomas Brambor's Data Visualization Course. All Analysis and Visualizations Performed in R"
+always_allow_html: yes
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = TRUE, warning=FALSE, message=FALSE)
+```
+
+#### 1. Total Medal Counts, by Country
+
+```{r, include = FALSE, message=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r, include = FALSE}
+setwd("~/Documents/QMSS_Spring/Data_Viz-Brambor/Kraushar_Dana/hw01")
+winter = read.csv("winter.csv")
+dictionary = read.csv("dictionary.csv")
+
+# make dataframes tbls
+winter_df <- tbl_df(winter)
+dictionary_df <- tbl_df(dictionary)
+```
+
+```{r, include = FALSE}
+## Country recodes: I identified the following countries as having obsolete names from the Cold War era. Where possible, I recoded the countries to represent its current name. In the cases of former states whose lines have been redrawn since the fall of the Berlin Wall (URS and EUN, corresponding to the Soviet Union), I subsumed them under Russia (RUS). Note: this likely leads Russian victories to be overrepresented in my analyses. 
+
+# unique(winter_df$Country)
+
+winter_df$Country <- recode(winter_df$Country, FRG = "GER", TCH = 'CZE', URS = 'RUS', EUA = 'USA', GDR = 'GER', EUN = 'RUS')
+
+# correct a mistake in spelling:
+winter_df$City <- recode(winter_df$City, St.Moritz = "St. Moritz")
+```
+
+##### Country summaries: Total medals won
+
+(**Note:** the following analyses treat duplicate medals earned in team or partner events as a single medal. See code for details.)
+
+```{r, include = FALSE} 
+# * Here is a preview of a tibble showing the number of Winter Games each country medaled in:
+
+country_competitions <- 
+  winter_df %>%
+  group_by(Country) %>%
+  distinct(Year) %>%
+  count() %>%
+  as.tibble()
+
+head(country_competitions)
+```
+
+```{r, include=FALSE}
+# * Here is a preview of another tibble showing the number of each type of medal each country has won, sorted by most won medals:
+
+country_medals_reduced <-
+  winter_df %>% 
+  distinct(Year, City, Sport, Discipline, Country, Event, Medal) %>%
+  group_by(Country) %>%
+  count(Medal) %>%
+  as.tibble() %>%
+  arrange(desc(n))
+
+head(country_medals_reduced)
+```
+
+
+```{r, include=FALSE}
+medals_over_time <-
+  winter_df %>% 
+  distinct(Year, City, Sport, Discipline, Country, Event, Medal) %>%
+  group_by(Country) %>%
+  ungroup() %>%
+  select(Year, Sport, Country, Medal)
+
+all_countries_tally <- medals_over_time %>% group_by(Country, Year) %>% tally()
+```
+
+```{r fig.height=12, fig.width=12}
+medals_over_time %>%
+  qplot(Year, data = ., geom = "histogram", fill = Medal, bins = 22) +
+  facet_wrap("Country", nrow = 8, ncol = 5) +
+  labs(title = "Country Medals Across Time") +
+  theme(title=element_text(size=15), plot.title = element_text(size = 20, hjust = 0.5))
+```
+
+
+##### Spotlight on countries' conversion rates:
+
+```{r, include = FALSE}
+silver_or_bronze_countries <-
+  country_medals_reduced %>%
+  group_by(Country) %>%
+  filter(Medal == "Silver" | Medal == "Bronze") %>%
+  summarize(silver_or_bronze = sum(n))
+
+names(silver_or_bronze_countries)
+
+gold_countries <- filter(country_medals_reduced, Medal == "Gold")
+gold_countries <- rename(gold_countries, gold = n)
+gold_countries <- select(gold_countries, -Medal)
+
+names(gold_countries)
+
+# create df of countries according to total number of medals they've won in either gold or silver/bronze
+first_or_not <- merge(gold_countries, silver_or_bronze_countries, by="Country")
+first_or_not <- mutate(first_or_not, total = (gold + silver_or_bronze))
+first_or_not <- mutate(first_or_not, prop_gold = gold / total)
+```
+
+```{r, include = FALSE}
+arrange(first_or_not, desc(prop_gold))
+
+victorious_countries <-
+  first_or_not %>%
+  arrange(desc(prop_gold)) %>%
+  mutate(rank = row_number()) %>% 
+  filter(rank <= 10) %>%
+  as.tibble()
+```
+
+```{r, include = FALSE}
+(head(victorious_countries))
+```
+
+
+```{r, include = FALSE}
+arrange(first_or_not, prop_gold)
+
+disappointed_countries <-
+  first_or_not %>%
+  arrange(prop_gold) %>%
+  mutate(rank = row_number()) %>% 
+  filter(rank <= 10) %>%
+  as.tibble()
+```
+
+```{r, include = FALSE}
+(head(disappointed_countries))
+```
+
+```{r}
+ggplot(data = victorious_countries, mapping = aes(x = reorder(Country, prop_gold), y = prop_gold)) + 
+  geom_bar(stat = "identity", fill = "#66CC99") +
+  labs(x = "",
+       y = "",
+       title = "Top 10 Best Closers",
+       subtitle = "Highest Proportion of Gold Medals Relative to All Medals Won") +
+  theme(aspect = 0.5, title=element_text(size=14))
+```
+
+```{r}
+ggplot(data = disappointed_countries, mapping = aes(x = reorder(Country, desc(prop_gold)), y = prop_gold)) + 
+  geom_bar(stat = "identity", fill = "#CC6666") +
+  labs(x = "",
+       y = "",
+       title = "Close but No Cigar: The 10 Most Disappointed Countries",
+       subtitle = "Lowest Proportion of Gold Medals Relative to All Medals Won") +
+  theme(aspect = 0.5, title=element_text(size=14))
+```
+
+#### 2. Medal Counts adjusted by Population, GDP
+
+I created three rankings of total gold medals each country won across all years of competition:
+
+1. Overall gold medals (unadjusted)
+2. Gold medals adjusted by country population (rescaled to millions of residents)
+3. Gold Medals adjusted by GDP per capita (measured as US $1,000 per resident)
+
+The results are fairly consistent at the high end of the rankings, and bode especially well for Germany, which is either first or second in each ranking; similarly, Norway is either second or third in each. Russia does not look as victorious when its large population is accounted for -- it actually falls out of the top 10 entirely.
+
+```{r, include = FALSE}
+# unadjusted rankings:
+
+(top_10_gold_general <- 
+  gold_countries %>%
+  arrange(desc(gold)) %>%
+  filter(gold > 34))
+
+#note: the following code did not work (returned every rank =1 ), so I had to filter based on the top-10 gold medal cutoff I manually observed):
+# (top_10_gold_general <- 
+#   gold_countries %>%
+#   arrange(desc(gold)) %>%
+#   mutate(rank = row_number()) %>%
+#   filter(rank <= 10))
+```
+
+
+```{r, include = FALSE}
+# rankings adjusted by GDP, population:
+gold_countries_dems <- merge(gold_countries, dictionary_df, by.x =c("Country"), by.y = c("Code"))
+gold_countries_dems <- gold_countries_dems[, -3] # remove duplicate "Country" column
+# gold_countries_dems$GDP.per.Capita[which(is.na(gold_countries_dems$GDP.per.Capita))] <- 168146 # replace NA with GDP per capita, from https://data.worldbank.org/indicator/NY.GDP.PCAP.CD?locations=LI. 
+gold_countries_dems <- na.omit(gold_countries_dems) # removed the NA, which applied only to Liechtenstein, which was clearly an outlier that would distort further analysis (very small, wealthy country that only won 2 gold medals)
+
+gold_countries_dems <-
+  gold_countries_dems %>%
+  as_tibble() %>%
+  mutate(
+    million_people = Population / 1000000,
+    GDP.per.Capita.thousands = GDP.per.Capita / 1000,
+    gold_per_mil_people = gold / million_people,
+    gold_per_GDP_thousands_per_cap = gold / GDP.per.Capita.thousands
+)
+
+# ranking by pop
+(top_10_gold_pop <- 
+  gold_countries_dems %>%
+  arrange(desc(gold_per_mil_people)) %>%
+  mutate(rank = row_number()) %>%
+  filter(rank <= 10))
+
+# ranking by GDP per capita
+(top_10_gold_GDP <- 
+  gold_countries_dems %>%
+  arrange(desc(gold_per_GDP_thousands_per_cap)) %>%
+  mutate(rank = row_number()) %>%
+  filter(rank <= 10))
+```
+
+```{r}
+#1
+ggplot(data = top_10_gold_general, mapping = aes(x=reorder(Country, gold), y=gold)) +
+  geom_bar(stat = "identity", fill = "goldenrod1") +
+  labs(x = "",
+       y = "Total Gold Medals",
+       title = "Overall Winningest Countries") +
+  theme(aspect.ratio = 1) +
+  coord_flip() +
+  theme(aspect = 0.5, title=element_text(size=14))
+
+#2
+ggplot(data = top_10_gold_pop, mapping = aes(x=reorder(Country, gold), y=gold)) +
+  geom_bar(stat = "identity", fill = "goldenrod2") +
+  labs(x = "",
+       y = "Total Gold Medals",
+       title = "Most Gold Medals by Population (Millions of Residents)") +
+  theme(aspect.ratio = 1) +
+  coord_flip() +
+  theme(aspect = 0.5, title=element_text(size=14))
+
+#3
+ggplot(data = top_10_gold_GDP, mapping = aes(x=reorder(Country, gold), y=gold)) +
+  geom_bar(stat = "identity", fill = "goldenrod3") +
+  labs(x = "",
+       y = "Total Gold Medals",
+       title = "Most Gold Medals by GDP (in US $1,000s) per Capita") +
+  theme(aspect.ratio = 1) +
+  coord_flip() +
+  theme(aspect = 0.5, title=element_text(size=14))
+```
+
+#### 3. Host Country Advantage
+
+```{r, include = FALSE, message=FALSE, warning=FALSE}
+library(rvest)
+library(stringr)
+wiki_hosts <- read_html("https://en.wikipedia.org/wiki/Winter_Olympic_Games")
+hosts <- html_table(html_nodes(wiki_hosts, "table")[[5]], fill=TRUE)
+hosts <- hosts[-1,1:3]
+hosts$City <- str_split_fixed(hosts$Host, n=2, ",")[,1]
+hosts$country <- str_split_fixed(hosts$Host, n=2, ",")[,2]
+```
+
+```{r, include = FALSE}
+country_medals_reduced2 <-
+  winter_df %>% 
+  distinct(Year, City, Sport, Discipline, Country, Event, Medal) %>%
+  group_by(Year, City, Sport, Discipline, Country, Event, Medal)
+```
+
+```{r, include = FALSE}
+country_medals_reduced2 <- merge(x = country_medals_reduced2, y = hosts, by=c("City"))
+
+country_medals_reduced2 <- country_medals_reduced2 %>% select (-Games, -Year.y, -Host)
+country_medals_reduced2 <- rename(country_medals_reduced2, Host_Country = country)
+country_medals_reduced2 <- rename(country_medals_reduced2, Host_City = City)
+country_medals_reduced2 <- rename(country_medals_reduced2, Athlete_Country_Code = Country)
+country_medals_reduced2 <- rename(country_medals_reduced2, Year = Year.x)
+country_medals_reduced2 <- country_medals_reduced2[,c("Host_City","Host_Country","Year","Sport","Discipline","Athlete_Country_Code","Event","Medal")]
+
+country_medals_reduced2 <- merge(x = country_medals_reduced2, y = dictionary_df, by.x = c("Athlete_Country_Code"), by.y = c("Code"))
+country_medals_reduced2 <- rename(country_medals_reduced2, Athlete_Country = Country)
+country_medals_reduced2 <- country_medals_reduced2[,c("Host_City","Host_Country","Year","Sport","Discipline","Event","Athlete_Country_Code","Athlete_Country","Medal","Population","GDP.per.Capita")]
+```
+
+```{r, include = FALSE}
+# keep each medal type distinct
+country_medals_reduced3 <-
+  country_medals_reduced2 %>% 
+  group_by(Athlete_Country, Year) %>%
+  count(Medal)
+
+# collapse all medal types into one
+country_medals_reduced4 <-
+  country_medals_reduced3 %>%
+  group_by(Athlete_Country, Year) %>%
+  summarize(total_medals = sum(n))
+
+# identifying medals won when competing at home --> I couldn't get this to work, so I ended up counting manually.
+```
+
+Only two countries have hosted the Winter Games more than twice: the U.S. and France. Below are visualizations of all medals won by those countries' teams across the years, highlighting the years in which they hosted the Games.
+
+##### USA
+```{r}
+plot_usa <- country_medals_reduced4 %>%
+  filter(Athlete_Country == "United States") %>%
+  ggplot(., mapping = aes(x=Year, y=total_medals)) +
+  geom_line(stat = "identity", color = "Lightblue", size = 2) +
+  labs(x = "",
+       y = "Total Medals",
+       title = "Medals Won By Team USA: 1924-2010")
+
+plot_usa + geom_point(aes(x = 1932, y = 24, color="Lake Placid (I)", size = 1.5)) +
+        geom_point(aes(x = 1960, y = 16, color="Squaw Valley", size = 1.5)) +
+        geom_point(aes(x = 1980, y = 24, color="Lake Placid (II)", size = 1.5)) +
+        geom_point(aes(x = 2002, y = 28, color="Salt Lake City", size = 1.5)) +
+        guides(size = FALSE) +
+    theme_bw(base_size = 11, base_family = "") +
+    labs(color = "") +
+  scale_x_continuous(breaks=c(1924,1932,1940,1948,1956,1964,1972,1980,1988,1996,2002,2010), limits = c(1924, 2010)) +
+  # limits=c("1924", "1932", "1940", "1948", "1956", "1964", "1972", "1980", "1988", "1996", "2002", "2010")) +
+  theme(title=element_text(size=14))
+```
+
+
+
+With the exception of the 1960 Squaw Valley Games, it does seem that Team USA won its most medals when it was hosting.
+
+##### France
+```{r}
+plot_france <- country_medals_reduced4 %>%
+  filter(Athlete_Country == "France") %>%
+  ggplot(., mapping = aes(x=Year, y=total_medals)) +
+  geom_line(stat = "identity", color = "purple", size = 2) +
+  labs(x = "",
+       y = "Total Medals",
+       title = "Medals Won By Team France Over All Years of Competition")
+
+plot_france + geom_point(aes(x = 1924, y = 3, color="Chamonix", size = 1.5)) +
+        geom_point(aes(x = 1968, y = 7, color="Grenoble", size = 1.5)) +
+        geom_point(aes(x = 1992, y = 9, color="Albertville", size = 1.5)) +
+        guides(size = FALSE) +
+    theme_bw(base_size = 11, base_family = "") +
+    labs(color = "") +
+    scale_x_discrete(limits=c(1924,1932,1940,1948,1956,1964,1972,1980,1988,1996,2002,2010)) +
+  theme(title=element_text(size=14))
+```
+
+The picture is more mixed for France: it had the advantage (or disadvantage) of being the guinea pig for all future Winter Olympic Games in 1924 (Chamonix), where it performed quite poorly. France has hosted three times -- second only to the U.S. -- but only its performance at Albertville in 1992 seemed to benefit from a home advantage. Fortunately, they've been steadily improving since 2006.
+
+
+#### 4. Country success by sport / discipline / event
+
+```{r, include = FALSE}
+speed_skating <- country_medals_reduced2 %>% filter(Discipline == "Speed skating")
+# View(speed_skating)
+
+# don't count medals (each row is a country win of a certain medal in a year)
+total_speed_medals2 <- speed_skating %>% 
+  group_by(Athlete_Country, Year) %>%
+  group_by(Athlete_Country)
+```
+Below is a plot of all countries that have ever medaled in speed skating. Norway and the Netherlands clearly lead the pack, followed by Russia and the United States.
+
+```{r}
+(ggplot(data = total_speed_medals2) +
+  geom_bar(mapping = aes(x = Athlete_Country, fill = Medal)) +
+  labs(x = "",
+       y = "",
+       title = "Speed Skating Winners, 1924 - 2014") +
+    coord_flip())
+
+# Note: I could not get the bars to sort by order, despite trying x = reorder(Athlete_Country, Medal), fill = Medal)
+```
+
+#### 5. Most successful athletes
+
+```{r, include = FALSE}
+athlete_gold_medals <- 
+  winter_df %>%
+  filter(Medal == "Gold") %>%
+  group_by(Athlete) %>%
+  # count(Medal) %>%
+  mutate(Total_Gold_Medals = length(Medal)) %>%
+  arrange(desc(Total_Gold_Medals)) %>%
+  ungroup() %>%
+  select(Sport, Country, Athlete, Gender, Medal, Total_Gold_Medals) %>%
+  unique()
+
+#selected top 11 instead of 10 because two are tied
+(top_athletes <-
+  athlete_gold_medals %>%
+  arrange(desc(Total_Gold_Medals)) %>%
+  mutate(rank=row_number()) %>%
+  filter(rank <= 11))
+```
+I created plots of the athletes with the most gold medals to their names, for both men and women. Certain countries clearly dominate (Norway on the men's side and Russia on the women's).
+
+```{r}
+(athletes_plot <- ggplot(data = top_athletes, aes(x = reorder(Athlete, desc(Total_Gold_Medals)), y = Total_Gold_Medals)) +
+  geom_point(aes(size = 5, color=Country, fill=Country)) + 
+  ylim(0,8) +
+  labs(x = "",
+       y = "",
+       title = "Top Winter Olympians of All Time",
+       subtitle = "Competitors with the Most Gold Medals") +
+  theme(axis.text.x=element_text(angle = 40, hjust = 1)) +
+  guides(size = FALSE) + 
+  facet_grid( ~ Gender, scales = "free") +
+  theme(title=element_text(size=14), aspect = 1))
+```
+
+#### 6. Interactive graphics
+
+```{r, include = FALSE, message=FALSE}
+library(plotly)
+```
+
+
+```{r, message = FALSE}
+ggplotly(athletes_plot, tooltip = c("Country","Athlete", "Total_Gold_Medals"))
+```
+
+
+```{r, message = FALSE}
+plot_usa2 <-
+  plot_usa + geom_point(aes(x = 1932, y = 24, color="Lake Placid (I)", size = 1.5)) +
+        geom_point(aes(x = 1960, y = 16, color="Squaw Valley", size = 1.5)) +
+        geom_point(aes(x = 1980, y = 24, color="Lake Placid (II)", size = 1.5)) +
+        geom_point(aes(x = 2002, y = 28, color="Salt Lake City", size = 1.5)) +
+        guides(size = FALSE) +
+    theme_bw(base_size = 11, base_family = "") +
+    labs(color = "") +
+  scale_x_discrete(limits=c(1924,1932,1940,1948,1956,1964,1972,1980,1988,1996,2002,2010)) +
+  theme(title=element_text(size=14))
+
+ggplotly(plot_usa2)
+```
+
+#### 7. Data Table
+
+Below is an interactive DataTable containing information on the number of gold medals each athlete won over all years of competition.
+
+```{r, include = FALSE, message=FALSE}
+library(DT)
+
+athlete_gold_medals2 <- 
+  athlete_gold_medals %>%
+  select(-Medal)
+```
+
+```{r}
+datatable(athlete_gold_medals2)
+```

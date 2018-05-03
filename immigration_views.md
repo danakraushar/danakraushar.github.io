@@ -1,7 +1,7 @@
 ---
 title: "Support for Immigration as a Function of Proximity to the Newcomer's Experience"
 author: "Dana Kraushar"
-date: "12/19/2017"
+# date: "12-19-2017"
 subtitle: "Assignment for Greg Eirich's Data Analysis course. All analysis performed in R"
 always_allow_html: yes
 output: 

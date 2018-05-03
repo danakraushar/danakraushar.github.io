@@ -1,6 +1,8 @@
 ---
-title: "Visualising Winter Olympic Medals Over Time"
-subtitle: "Assignment for Thomas Brambor's Data Visualization Course. All Analysis and Visualizations Performed in R"
+title: "Visualizing Winter Olympic Medals Over Time"
+author: "Dana Kraushar"
+date: "2/22/2018"
+subtitle: "Assignment for Thomas Brambor's Data Visualization course. All analysis and visualizations performed in R"
 always_allow_html: yes
 output: 
   html_document:

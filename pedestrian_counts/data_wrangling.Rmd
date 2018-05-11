@@ -323,9 +323,89 @@ brooklyn_bridge_totals <- peds %>%
 ```
 
 ```{r}
+peds_by_borough <- peds_by_borough %>% 
+                            mutate(
+                                sum_May07 = total_May07_AM + total_May07_MD + total_May07_PM,
+                                sum_Sept07 = total_Sept07_AM + total_Sept07_MD + total_Sept07_PM,
+                                sum_2007 = sum_May07 + sum_Sept07,
+                                
+                                sum_May08 = total_May08_AM + total_May08_MD + total_May08_PM,
+                                sum_Sept08 = total_Sept08_AM + total_Sept08_MD + total_Sept08_PM,
+                                sum_2008 = sum_May08 + sum_Sept08,     
+                                
+                                sum_May09 = total_May09_AM + total_May09_MD + total_May09_PM,
+                                sum_Sept09 = total_Sept09_AM + total_Sept09_MD + total_Sept09_PM,
+                                sum_2009 = sum_May09 + sum_Sept09,   
+                                
+                                sum_May10 = total_May10_AM + total_May10_MD + total_May10_PM,
+                                sum_Sept10 = total_Sept10_AM + total_Sept10_MD + total_Sept10_PM,
+                                sum_2010 = sum_May10 + sum_Sept10,
+                                
+                                sum_May11 = total_May11_AM + total_May11_MD + total_May11_PM,
+                                sum_Sept11 = total_Sept11_AM + total_Sept11_MD + total_Sept11_PM,
+                                sum_2011 = sum_May11 + sum_Sept11,   
+                                
+                                sum_May12 = total_May12_AM + total_May12_MD + total_May12_PM,
+                                sum_Sept12 = total_Sept12_AM + total_Sept12_MD + total_Sept12_PM,
+                                sum_2012 = sum_May12 + sum_Sept12,  
+                                
+                                sum_May13 = total_May13_AM + total_May13_MD + total_May13_PM,
+                                sum_Sept13 = total_Sept13_AM + total_Sept13_MD + total_Sept13_PM,
+                                sum_2013 = sum_May13 + sum_Sept13,  
+                                
+                                sum_May14 = total_May14_AM + total_May14_MD + total_May14_PM,
+                                sum_Sept14 = total_Sept14_AM + total_Sept14_MD + total_Sept14_PM,
+                                sum_2014 = sum_May14 + sum_Sept14,       
+                                
+                                sum_May15 = total_May15_AM + total_May15_MD + total_May15_PM
+                                   )
+
+```
+
+```{r}
+brooklyn_bridge_totals <- brooklyn_bridge_totals %>% 
+                            mutate(
+                                sum_May07 = total_May07_AM + total_May07_MD + total_May07_PM,
+                                sum_Sept07 = total_Sept07_AM + total_Sept07_MD + total_Sept07_PM,
+                                sum_2007 = sum_May07 + sum_Sept07,
+                                
+                                sum_May08 = total_May08_AM + total_May08_MD + total_May08_PM,
+                                sum_Sept08 = total_Sept08_AM + total_Sept08_MD + total_Sept08_PM,
+                                sum_2008 = sum_May08 + sum_Sept08,     
+                                
+                                sum_May09 = total_May09_AM + total_May09_MD + total_May09_PM,
+                                sum_Sept09 = total_Sept09_AM + total_Sept09_MD + total_Sept09_PM,
+                                sum_2009 = sum_May09 + sum_Sept09,   
+                                
+                                sum_May10 = total_May10_AM + total_May10_MD + total_May10_PM,
+                                sum_Sept10 = total_Sept10_AM + total_Sept10_MD + total_Sept10_PM,
+                                sum_2010 = sum_May10 + sum_Sept10,
+                                
+                                sum_May11 = total_May11_AM + total_May11_MD + total_May11_PM,
+                                sum_Sept11 = total_Sept11_AM + total_Sept11_MD + total_Sept11_PM,
+                                sum_2011 = sum_May11 + sum_Sept11,   
+                                
+                                sum_May12 = total_May12_AM + total_May12_MD + total_May12_PM,
+                                sum_Sept12 = total_Sept12_AM + total_Sept12_MD + total_Sept12_PM,
+                                sum_2012 = sum_May12 + sum_Sept12,  
+                                
+                                sum_May13 = total_May13_AM + total_May13_MD + total_May13_PM,
+                                sum_Sept13 = total_Sept13_AM + total_Sept13_MD + total_Sept13_PM,
+                                sum_2013 = sum_May13 + sum_Sept13,  
+                                
+                                sum_May14 = total_May14_AM + total_May14_MD + total_May14_PM,
+                                sum_Sept14 = total_Sept14_AM + total_Sept14_MD + total_Sept14_PM,
+                                sum_2014 = sum_May14 + sum_Sept14,       
+                                
+                                sum_May15 = total_May15_AM + total_May15_MD + total_May15_PM
+                                   )
+```
+
+
+```{r}
 write_csv(peds, "peds_cleaned.csv")
 write_csv(peds_by_borough, "peds_by_borough.csv")
-write_csv(brooklyn_bridge_totals, "brooklyn_bridge")
+write_csv(brooklyn_bridge_totals, "brooklyn_bridge.csv")
 
 ```
 

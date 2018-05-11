@@ -5,20 +5,20 @@
   var width = 1000 - margin.left - margin.right,
       height = 500 - margin.top - margin.bottom
 
-  var svg = d3.select("#graphic-1").append("svg")
+  var svg = d3.select("#chart1").append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
 d3.queue()
-  .defer(d3.csv, "peds_by_borough.csv")
+  .defer(d3.csv, "brooklyn_bridge.csv")
   .await(ready)
 
-function ready(error, ped_boroughs) {
-    console.log(ped_boroughs)
+function ready(error, brooklyn_bridge) {
+    console.log(brooklyn_bridge)
 
-  var maxMay15 = d3.max(ped_boroughs, function(d) { return d.sum_May15 })
+  var maxMay15 = d3.max(brooklyn, function(d) { return d.sum_May15 })
   var widthScale = d3.scaleLinear()
       .domain([0, maxMay15])
       .range([0, .01*width])

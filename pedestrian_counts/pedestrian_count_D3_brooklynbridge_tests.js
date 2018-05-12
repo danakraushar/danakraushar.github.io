@@ -1,6 +1,6 @@
 (function () {
 
-  var margin = { top: 0, right: 50, bottom: 0, left: 80 }
+  var margin = { top: 20, right: 50, bottom: 100, left: 50 }
 
   var width = 1000 - margin.left - margin.right,
       height = 500 - margin.top - margin.bottom
@@ -12,61 +12,66 @@
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
 d3.queue()
-  .defer(d3.csv, "brooklyn_bridge.csv")
+  .defer(d3.csv, "brooklyn_bridge_transpose.csv")
   .await(ready)
 
 function ready(error, brooklyn_bridge) {
     console.log(brooklyn_bridge)
 
-  var maxMay15 = d3.max(brooklyn, function(d) { return d.sum_May15 })
-  var widthScale = d3.scaleLinear()
-      .domain([0, maxMay15])
-      .range([0, .01*width])
+  var heightScale = d3.scaleLinear()
+      .domain([0, 20500])
+      // .range([height, 0])
+      .range([0, height])
 
-  var yPositionScale = d3.scaleBand()
+
+  var y = d3.scaleLinear()
+    .domain([0, 20500])
+    .range([0, height])
+
+  var xPositionScale = d3.scaleBand()
     .padding(0.5)
 
-  var yPositionScale = d3.scaleOrdinal()
-      .domain(['Bronx', 'Brooklyn', 'Manhattan', 'Queens', 'Staten Island'])
-      .range([1/6*height, 2/6*height, 3/6*height, 4/6*height, 5/6*height])
+  brooklyn_bridge = brooklyn_bridge.filter(function(d) { 
+                        return d.rowname === 'sum_2007' || 
+                               d.rowname === 'sum_2008' ||
+                               d.rowname === 'sum_2009' || 
+                               d.rowname === 'sum_2010'
+                      })
 
-  var sorted_May15 = ped_boroughs.sort(function(a, b) {
-                  return b.sum_May15 - a.sum_May15
-                  })
+  console.log(brooklyn_bridge)
 
-  var Borough = sorted_May15.map(function(d) { return d.Borough })
-  yPositionScale.domain(Borough) /*changes scales to reflect order we just created*/
+  var xPositionScale = d3.scaleOrdinal()
+      .domain(['sum_2007', 'sum_2008', 'sum_2009', 'sum_2010'])
+      .range([1/10*width, 2/10*width, 3/10*width, 4/10*width])
+      // .range([200, 400, 600, 800])
 
-  svg.selectAll(".borough_bars")
-    .data(ped_boroughs)
+  svg.selectAll(".bridge_07_10")
+    .data(brooklyn_bridge)
     .enter().append("rect")
-    .attr("height", 40)
-    .attr("x", 0)
+    .attr("width", 40)
     .attr("y", function(d) {
-      return yPositionScale(d.Borough)
+      return height - y(d.total)
     })
-    .attr("width", function(d) {
-      console.log(d.sum_May15)
-      return widthScale(d.sum_May15)
+    .attr("x", function(d) {
+      console.log(d.rowname)
+      return xPositionScale(d.rowname)
     })
-    .attr("fill", function(d) {
-      if (d.Borough === "Manhattan") {
-        return "#A35E60";
-      } else {
-        return "#D8A49B"
-      }
-      })
+    .attr("height", function(d) {
+      console.log(d.total)
+      return heightScale(d.total)
+    })
+    .attr("fill", "#A35E60")
 
-  var yAxis = d3.axisLeft(yPositionScale)
+  var yAxis = d3.axisLeft(heightScale)
   svg.append("g")
     .attr("class", "axis y-axis")
     .call(yAxis)
 
-  var xAxis = d3.axisBottom(widthScale)
+  var xAxis = d3.axisBottom(xPositionScale)
   svg.append("g")
-    .attr("class", "axis x-axis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(xAxis)
+      .attr("class", "axis x-axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
 
   }
 

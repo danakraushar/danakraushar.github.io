@@ -401,11 +401,20 @@ brooklyn_bridge_totals <- brooklyn_bridge_totals %>%
                                    )
 ```
 
+```{r}
+# transpose brooklyn bridge data
+
+brooklyn_bridge_totals_t <- as.data.frame(t(brooklyn_bridge_totals))
+
+brooklyn_bridge_totals_t2 <- as.data.frame(t(brooklyn_bridge_totals)) %>% rename(total = V1)
+brooklyn_bridge_totals_t2 <- brooklyn_bridge_totals_t2 %>% rownames_to_column()
+```
 
 ```{r}
 write_csv(peds, "peds_cleaned.csv")
 write_csv(peds_by_borough, "peds_by_borough.csv")
 write_csv(brooklyn_bridge_totals, "brooklyn_bridge.csv")
+write_csv(brooklyn_bridge_totals_t2, "brooklyn_bridge_transpose.csv")
 
 ```
 

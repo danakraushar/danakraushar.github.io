@@ -124,25 +124,23 @@
     <div class="row">
       <div class="col-sm-4">
         <div class="step" id="boroughs-step-one">
-          <h3>This is a step</h3>
-          <p>Right now it has a little padding on the top and bottom, and the text is all left-aligned, but you can change that easily in the CSS. It's all of the <code>.row</code> stuff.</p>
+          <h3>Walkers by borough</h3>
+          <p>It appears that Manhattan has by far the most pedestrian activity. This is no great surprise, as Manhattan is the city's densest borough, as well as the its professional hub. It is important to note that 70 of the 114 locations selected by the DoT for this study are in Manhattan. So while the high pedestrian activity in Manhattan squares with what we would expect, this is not a terribly interesting takeaway considering the DoT's questionable data collection methods.</p>
         </div>
         <div class="step" id="boroughs-step-two">
-          <h3>This is another step</h3>
-          <p>Blah blah blah blah</p>
-          <p>Blah blah blah blah</p>
-          <p>Blah blah blah blah</p>
+          <h3>Let's take a closer look at Manhattan</h3>
+          <p>We can examine how pedestrian counts have varied in Manhattan between different times of day (data is collected in the morning, midday, and at night).</p>
+          <p>Has this changed over time?</p>
         </div>
         <div class="step" id="boroughs-step-three">
-          <p>Blah blah blah blah</p>
-          <p>Blah blah blah blah</p>
-          <p>Blah blah blah blah</p>
+          <h3>Seasonal variations</h3>          
+          <p>Data is collected in May and September. Are there noticable differences between walking rates in Manhattan in those months?</p>
         </div>
       </div>
 
       <div class="col-sm-8 graphic sticky">
-        <p>I am the graphic. <strong>Remove this text</strong></p>
-        <div id="graphic-1"></div>
+        <p>Pedestrians counted morning, midday and night in <strong>May 2015</strong></p>
+        <div id="boroughs-graphic-1"></div>
 
       </div>
     </div>
@@ -163,30 +161,28 @@
 
     <div class="row">
       <div class="col-sm-4">
-        <div class="step" id="step-2-1">
-          <h3>Foot traffic over the years</h3>
+        <div class="step" id="bridge-step-one">
+          <h3>Foot traffic seemed mostly stable until 2013</h3>
           <p>Brooklyn was once a touristic afterthought, perhaps even an area to be avoided. But over the years, it has become globally synonymous with hipster culture and laid-back cool, making it a popular destination in its own right. And as any guidebook will tell you, the best way to see the borough is to start with its 150-year-old eponymous bridge.</p>
         </div>
-        <div class="step" id="step-2-2">
-          <h3>This is another step</h3>
-          <p>Blah blah blah blah</p>
-          <p>Blah blah blah blah</p>
-          <p>Blah blah blah blah</p>
+        <div class="step" id="bridge-step-two">
+          <h3>But in 2014, we see that pedestrian rates spiked</h3>
+          <p>Does that mark a turning point in Brooklyn mania? TBD</p>
         </div>
       </div>
 
       <div class="col-sm-8 graphic sticky">
         <p>Pedestrian counts, measured from the midpoint of the Brooklyn Bridge twice a year from 2007-2015</p>
-        <div id="graphic-2"><img src="images/cat.jpg"></div>
+        <div id="bridge-graphic-1"></div>
+
       </div>
     </div>
 
     <div class="row">
       <div class="col">
-        <h3>We can also put a wide graphic in here</h3>
-        <div id="graphic-3"></div>
-        <p>It doesn't need to be in one of those sticky things!</p>
-        <p>If you want to make it do a transition thing though you'll need to use a <code>.step</code></p>
+        <h3>Clearly, there is much more to do here.</h3>
+        <!-- <div id="graphic-3"></div> -->
+        <p>Maps would be nice -- I'm still trying to figure out how to get them to work.</p>
       </div>
     </div>
 
@@ -253,8 +249,36 @@
       </div>
     </footer>
 
-<!--   <script src='03-chart-1.js'></script>
-  <script src='03-chart-1.js'></script> -->
-  <script src="pedestrian_count_D3_barchart_tests.js"></script>
+    <script>
+    /* Allow position: sticky to work in old browsers */
+    var elements = document.querySelectorAll('.sticky');
+    Stickyfill.add(elements);
+
+    // instantiate the scrollama
+    var scroller = scrollama();
+
+    scroller
+      .setup({
+        // IF YOU CHANGE THIS CHANGE THE .sticky CSS
+        offset: 0.33, // how far from the top?
+        step: '.step', // class for stepping through
+        // debug: true, // shows the line
+        container: 'container'
+      })
+      .onStepEnter(function(response) {
+        // trigger the stepin event
+        d3.select(response.element).dispatch('stepin')
+        d3.select(response.element).classed('active', true)
+      })
+      .onStepExit(function(response) {
+        // trigger the stepout event
+        d3.select(response.element).dispatch('stepout')
+        d3.select(response.element).classed('active', false)
+      })
+  </script>
+
+  <script src="boroughs_tests.js"></script>
+  <script src="brooklynbridge_tests.js"></script>
+
 </body>
 </html>
